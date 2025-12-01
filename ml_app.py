@@ -6,7 +6,7 @@ import requests
 import urllib.parse
 
 # ======================================
-# CONFIG MERCADO LIVRE
+# CONFIG ML
 # ======================================
 CLIENT_ID = "8611967944426259"
 CLIENT_SECRET = "EBXpqfZLRgKC6e71BYRtKtsmD1zEXXZg"
@@ -14,13 +14,12 @@ REDIRECT_URI = "https://ml-anuncios-r37onkxuojbhs8ht5mwb8f.streamlit.app"
 
 st.set_page_config(page_title="ML Login", page_icon="🛒")
 
-st.title("🔐 Login Mercado Livre com PKCE")
-
+st.title("🔐 Login Mercado Livre PKCE (Mode Persistente)")
 
 # ======================================
-# PKCE FIXO NA SESSÃO
+# FIX PKCE — mantido sempre enquanto a sessão existir
 # ======================================
-if "pkce_generated" not in st.session_state:
+if "code_verifier" not in st.session_state:
     verifier = secrets.token_urlsafe(64)
     challenge = base64.urlsafe_b64encode(
         hashlib.sha256(verifier.encode()).digest()
@@ -28,32 +27,28 @@ if "pkce_generated" not in st.session_state:
 
     st.session_state.code_verifier = verifier
     st.session_state.code_challenge = challenge
-    st.session_state.pkce_generated = True
-
 
 # ======================================
-# LINK DE AUTORIZAÇÃO
+# URL LOGIN
 # ======================================
 auth_url = (
     "https://auth.mercadolibre.com/authorization?"
-    f"response_type=code&client_id={CLIENT_ID}"
+    f"response_type=code"
+    f"&client_id={CLIENT_ID}"
     f"&redirect_uri={urllib.parse.quote(REDIRECT_URI)}"
     f"&code_challenge={st.session_state.code_challenge}"
     f"&code_challenge_method=S256"
 )
 
-st.markdown(f"👉 [Clique aqui para fazer login no Mercado Livre]({auth_url})")
-
-st.info("Após o login você será redirecionado de volta aqui com ?code=.")
-
+st.markdown(f"👉 **[Clique aqui para fazer login no Mercado Livre]({auth_url})**")
 
 # ======================================
-# RECUPERA O CODE DO RETORNO
+# TRATANDO O RETURN CODE
 # ======================================
-query_params = st.experimental_get_query_params()
+params = st.experimental_get_query_params()
 
-if "code" in query_params:
-    code = query_params["code"][0]
+if "code" in params:
+    code = params["code"][0]
     st.success("Código recebido! Solicitando token...")
 
     payload = {
@@ -65,12 +60,12 @@ if "code" in query_params:
         "code_verifier": st.session_state.code_verifier
     }
 
-    token = requests.post("https://api.mercadolibre.com/oauth/token", data=payload)
-    result = token.json()
+    resp = requests.post("https://api.mercadolibre.com/oauth/token", data=payload)
+    token = resp.json()
 
-    st.subheader("📦 Resposta:")
-    st.json(result)
+    st.subheader("📦 Resposta da API")
+    st.json(token)
 
-    if "access_token" in result:
-        st.success("Token obtido com sucesso!")
-        st.session_state.access_token = result["access_token"]
+    if "access_token" in token:
+        st.success("Token gerado com sucesso! 🎉")
+        st.session_state.access_token = token["access_token"]
