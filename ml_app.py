@@ -1,71 +1,63 @@
 import streamlit as st
-import secrets
-import hashlib
-import base64
-import requests
-import urllib.parse
+import secrets, hashlib, base64, requests, urllib.parse
 
-# ======================================
-# CONFIG ML
-# ======================================
 CLIENT_ID = "8611967944426259"
 CLIENT_SECRET = "EBXpqfZLRgKC6e71BYRtKtsmD1zEXXZg"
 REDIRECT_URI = "https://ml-anuncios-r37onkxuojbhs8ht5mwb8f.streamlit.app"
 
-st.set_page_config(page_title="ML Login", page_icon="🛒")
+st.set_page_config(page_title="ML PKCE Debug", layout="centered")
+st.title("Debug OAuth2 PKCE — Troca de code")
 
-st.title("🔐 Login Mercado Livre PKCE (Mode Persistente)")
-
-# ======================================
-# FIX PKCE — mantido sempre enquanto a sessão existir
-# ======================================
+# --- gerar PKCE só 1 vez por sessão ---
 if "code_verifier" not in st.session_state:
     verifier = secrets.token_urlsafe(64)
-    challenge = base64.urlsafe_b64encode(
-        hashlib.sha256(verifier.encode()).digest()
-    ).rstrip(b"=").decode()
-
+    challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
     st.session_state.code_verifier = verifier
     st.session_state.code_challenge = challenge
+    st.session_state.pkce_locked = True
 
-# ======================================
-# URL LOGIN
-# ======================================
 auth_url = (
     "https://auth.mercadolibre.com/authorization?"
-    f"response_type=code"
-    f"&client_id={CLIENT_ID}"
+    f"response_type=code&client_id={CLIENT_ID}"
     f"&redirect_uri={urllib.parse.quote(REDIRECT_URI)}"
     f"&code_challenge={st.session_state.code_challenge}"
     f"&code_challenge_method=S256"
 )
 
-st.markdown(f"👉 **[Clique aqui para fazer login no Mercado Livre]({auth_url})**")
+st.markdown(f"[➜ Abrir login Mercado Livre]({auth_url})")
+st.write("Após o redirect cole a URL completa aqui (ex.: https://.../?code=TG-... ):")
 
-# ======================================
-# TRATANDO O RETURN CODE
-# ======================================
-params = st.experimental_get_query_params()
+redirect_url = st.text_input("Cole a URL de retorno aqui:")
 
-if "code" in params:
-    code = params["code"][0]
-    st.success("Código recebido! Solicitando token...")
-
-    payload = {
-        "grant_type": "authorization_code",
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-        "code": code,
-        "redirect_uri": REDIRECT_URI,
-        "code_verifier": st.session_state.code_verifier
-    }
-
-    resp = requests.post("https://api.mercadolibre.com/oauth/token", data=payload)
-    token = resp.json()
-
-    st.subheader("📦 Resposta da API")
-    st.json(token)
-
-    if "access_token" in token:
-        st.success("Token gerado com sucesso! 🎉")
-        st.session_state.access_token = token["access_token"]
+if st.button("Trocar code por token (Testar)"):
+    if not redirect_url:
+        st.error("Cole a URL de retorno primeiro.")
+    else:
+        # extrair code da URL
+        try:
+            from urllib.parse import urlparse, parse_qs
+            parsed = urlparse(redirect_url)
+            code = parse_qs(parsed.query).get("code",[None])[0]
+            if not code:
+                st.error("Não achei ?code= na URL fornecida.")
+            else:
+                st.write(">> Code detectado:", code)
+                payload = {
+                    "grant_type": "authorization_code",
+                    "client_id": CLIENT_ID,
+                    "client_secret": CLIENT_SECRET,
+                    "code": code,
+                    "redirect_uri": REDIRECT_URI,
+                    "code_verifier": st.session_state.code_verifier
+                }
+                st.subheader("🔎 Payload enviado:")
+                st.json(payload)
+                # fazer a requisição
+                resp = requests.post("https://api.mercadolibre.com/oauth/token", data=payload)
+                st.subheader("📦 Resposta bruta:")
+                try:
+                    st.json(resp.json())
+                except Exception:
+                    st.text(resp.text)
+        except Exception as e:
+            st.error("Erro ao processar a URL: " + str(e))
