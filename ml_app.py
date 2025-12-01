@@ -7,9 +7,9 @@ from urllib.parse import urlencode
 # ======================================================
 # CONFIGURAÇÕES DO MERCADO LIVRE
 # ======================================================
-CLIENT_ID = "SEU_CLIENT_ID"
-CLIENT_SECRET = "SEU_CLIENT_SECRET"
-REDIRECT_URI = "https://localhost"   # configure no app ML
+CLIENT_ID = "8611967944426259"
+CLIENT_SECRET = "EBXpqfZLRgKC6e71BYRtKtsmD1zEXXZg"
+REDIRECT_URI = "https://ml-anuncios-r37onkxuojbhs8ht5mwb8f.streamlit.app"   # configure no app ML
 
 AUTH_URL = "https://auth.mercadolivre.com.br/authorization"
 TOKEN_URL = "https://api.mercadolibre.com/oauth/token"
@@ -174,3 +174,4 @@ rows = c.execute("SELECT titulo, preco, categoria, ml_id FROM anuncios").fetchal
 conn.close()
 
 st.table(rows)
+
