@@ -11,8 +11,8 @@ import urllib.parse as urlparse
 # ==========================
 CLIENT_ID = "8611967944426259"
 REDIRECT_URI = "https://ml-anuncios-r37onkxuojbhs8ht5mwb8f.streamlit.app"
-AUTH_URL = "https://auth.mercadolibre.com.br/authorization"
-TOKEN_URL = "https://api.mercadolibre.com/oauth/token"
+AUTH_URL = "https://auth.mercadolivre.com.br/authorization"
+TOKEN_URL = "https://api.mercadolivre.com.br/oauth/token"
 
 st.set_page_config(page_title="Login ML PKCE", layout="centered")
 
@@ -80,3 +80,4 @@ if "code" in query_params:
     if "access_token" in response.json():
         st.success("🎉 LOGIN OK — TOKEN GERADO!")
         st.session_state["token"] = response.json()
+
