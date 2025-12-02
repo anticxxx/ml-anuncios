@@ -1,77 +1,64 @@
 import streamlit as st
 import requests
-import base64
-import hashlib
-import os
-import urllib.parse
 
 # ==========================
-# CONFIG MERCADO LIVRE (APP PÚBLICO)
+# CONFIG MERCADO LIVRE
 # ==========================
-CLIENT_ID = "8611967944426259"  # Substitua pelo seu app público
+CLIENT_ID = "8638371271882362"
+CLIENT_SECRET = "O2cEpSmK09bP6N3qCBxGb1GeiAm6CCHn"
 REDIRECT_URI = "https://ml-anuncios-r37onkxuojbhs8ht5mwb8f.streamlit.app"
+
 AUTH_URL = "https://auth.mercadolivre.com.br/authorization"
-TOKEN_URL = "https://api.mercadolibre.com/oauth/token"
+TOKEN_URL = "https://api.mercadolivre.com/oauth/token"
 
-st.set_page_config(page_title="ML PKCE Login", layout="centered")
-st.title("🔐 Login Mercado Livre PKCE (App Público)")
+st.set_page_config(page_title="Login ML", layout="centered")
 
-# ==========================
-# GERAR PKCE
-# ==========================
-def generate_pkce():
-    code_verifier = base64.urlsafe_b64encode(os.urandom(40)).decode("utf-8").rstrip("=")
-    code_challenge = base64.urlsafe_b64encode(
-        hashlib.sha256(code_verifier.encode("utf-8")).digest()
-    ).decode("utf-8").rstrip("=")
-    return code_verifier, code_challenge
+st.title("🔐 Login Mercado Livre (OAuth2 Sem PKCE)")
 
-if "code_verifier" not in st.session_state:
-    st.session_state.code_verifier, st.session_state.code_challenge = generate_pkce()
 
 # ==========================
-# LINK DE LOGIN
+# BOTÃO LOGIN
 # ==========================
-auth_link = (
-    f"{AUTH_URL}?response_type=code"
-    f"&client_id={CLIENT_ID}"
-    f"&redirect_uri={urllib.parse.quote(REDIRECT_URI)}"
-    f"&code_challenge={st.session_state.code_challenge}"
-    f"&code_challenge_method=S256"
-)
+if st.button("👉 Clique aqui para fazer login no Mercado Livre", use_container_width=True):
+    auth_link = (
+        f"{AUTH_URL}?response_type=code"
+        f"&client_id={CLIENT_ID}"
+        f"&redirect_uri={REDIRECT_URI}"
+    )
+    st.markdown(f"🌍 **Abra este link para autorizar:**\n\n[{auth_link}]({auth_link})")
 
-st.markdown(f"[👉 Clique aqui para LOGIN no Mercado Livre]({auth_link})")
 
 # ==========================
-# CAPTURA DO CODE NA URL
+# CAPTURA DO CODE
 # ==========================
 query_params = st.experimental_get_query_params()
+
 if "code" in query_params:
     code = query_params["code"][0]
     st.success("Código recebido!")
-    st.write(code)
+    st.code(code)
 
+    # ==========================
+    # SOLICITA TOKEN
+    # ==========================
     payload = {
         "grant_type": "authorization_code",
         "client_id": CLIENT_ID,
-        "redirect_uri": REDIRECT_URI,
+        "client_secret": CLIENT_SECRET,
         "code": code,
-        "code_verifier": st.session_state.code_verifier
+        "redirect_uri": REDIRECT_URI
     }
 
-    st.write("📨 Enviando para o Mercado Livre...")
+    st.write("📨 Enviando token request...")
     st.json(payload)
 
-    try:
-        response = requests.post(TOKEN_URL, data=payload, headers={"Accept": "application/json"})
-        data = response.json()
-        st.write("📦 Resposta da API")
-        st.json(data)
+    response = requests.post(TOKEN_URL, data=payload, headers={"Accept": "application/json"})
+    result = response.json()
 
-        if "access_token" in data:
-            st.success("🎉 LOGIN OK — TOKEN GERADO!")
-            st.session_state["token"] = data
-        else:
-            st.error("❌ Não foi possível gerar o token. Confira o app público e o redirect URI.")
-    except Exception as e:
-        st.error(f"❌ Erro ao conectar na API: {e}")
+    st.write("📦 Resposta da API:")
+    st.json(result)
+
+    if "access_token" in result:
+        st.success("🎉 TOKEN GERADO COM SUCESSO!")
+        st.session_state["access_token"] = result["access_token"]
+        st.session_state["refresh_token"] = result["refresh_token"]
