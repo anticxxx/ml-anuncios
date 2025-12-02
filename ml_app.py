@@ -6,9 +6,9 @@ import os
 import urllib.parse
 
 # ==========================
-# CONFIG MERCADO LIVRE (App Público)
+# CONFIG MERCADO LIVRE (APP PÚBLICO)
 # ==========================
-CLIENT_ID = "8611967944426259"
+CLIENT_ID = "8611967944426259"  # Substitua pelo seu app público
 REDIRECT_URI = "https://ml-anuncios-r37onkxuojbhs8ht5mwb8f.streamlit.app"
 AUTH_URL = "https://auth.mercadolivre.com.br/authorization"
 TOKEN_URL = "https://api.mercadolibre.com/oauth/token"
@@ -17,7 +17,7 @@ st.set_page_config(page_title="ML PKCE Login", layout="centered")
 st.title("🔐 Login Mercado Livre PKCE (App Público)")
 
 # ==========================
-# FUNÇÃO PARA GERAR PKCE
+# GERAR PKCE
 # ==========================
 def generate_pkce():
     code_verifier = base64.urlsafe_b64encode(os.urandom(40)).decode("utf-8").rstrip("=")
@@ -26,14 +26,11 @@ def generate_pkce():
     ).decode("utf-8").rstrip("=")
     return code_verifier, code_challenge
 
-# ==========================
-# GERAR PKCE UMA ÚNICA VEZ POR SESSÃO
-# ==========================
 if "code_verifier" not in st.session_state:
     st.session_state.code_verifier, st.session_state.code_challenge = generate_pkce()
 
 # ==========================
-# BOTÃO LOGIN
+# LINK DE LOGIN
 # ==========================
 auth_link = (
     f"{AUTH_URL}?response_type=code"
@@ -46,7 +43,7 @@ auth_link = (
 st.markdown(f"[👉 Clique aqui para LOGIN no Mercado Livre]({auth_link})")
 
 # ==========================
-# CAPTURA CODE NA URL
+# CAPTURA DO CODE NA URL
 # ==========================
 query_params = st.experimental_get_query_params()
 if "code" in query_params:
@@ -75,6 +72,6 @@ if "code" in query_params:
             st.success("🎉 LOGIN OK — TOKEN GERADO!")
             st.session_state["token"] = data
         else:
-            st.error("❌ Não foi possível gerar o token. Confira a URL de retorno e tente novamente.")
+            st.error("❌ Não foi possível gerar o token. Confira o app público e o redirect URI.")
     except Exception as e:
         st.error(f"❌ Erro ao conectar na API: {e}")
