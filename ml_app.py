@@ -1,12 +1,7 @@
 import streamlit as st
 import requests
 
-# ==========================
-# CONFIG MERCADO LIVRE
-# ==========================
-CLIENT_ID = "8638371271882362"
-CLIENT_SECRET = "O2cEpSmK09bP6N3qCBxGb1GeiAm6CCHn"
-REDIRECT_URI = "https://ml-anuncios-r37onkxuojbhs8ht5mwb8f.streamlit.app"
+
 
 AUTH_URL = "https://auth.mercadolivre.com.br/authorization"
 TOKEN_URL = "https://api.mercadolivre.com/oauth/token"
@@ -62,3 +57,4 @@ if "code" in query_params:
         st.success("🎉 TOKEN GERADO COM SUCESSO!")
         st.session_state["access_token"] = result["access_token"]
         st.session_state["refresh_token"] = result["refresh_token"]
+
